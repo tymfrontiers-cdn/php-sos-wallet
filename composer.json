@@ -1,0 +1,38 @@
+{
+  "name": "tymfrontiers-cdn/php-sos-wallet",
+  "description": "Generic Wallet manager for 7 OS",
+  "keywords": ["php", "wallet", "manager"],
+  "homepage": "https://github.com/tymfrontiers-cdn/php-sos-wallet",
+  "type": "library",
+  "license": "MIT",
+  "authors": [
+      {
+          "name": "Ikechukwu Okalia",
+          "email": "dev@ikechukwuokalia.com",
+          "homepage": "https://ikechukwuokalia.com",
+          "role": "developer"
+      },
+      {
+          "name": "Tym Frontiers Ltd",
+          "email": "dev@tymfrontiers.com",
+          "homepage": "https://tymfrontiers.com",
+          "role": "developer"
+      }
+  ],
+  "require": {
+    "php" : ">=5.3",
+    "tymfrontiers-cdn/php-data" : ">=0.1@stable",
+    "tymfrontiers-cdn/php-mysql-database" : ">=0.1@stable",
+    "tymfrontiers-cdn/php-mysql-database-object" : ">=0.1@stable",
+    "tymfrontiers-cdn/php-pagination" : ">=0.1@stable",
+    "tymfrontiers-cdn/php-multiform" : ">=0.1@stable",
+    "tymfrontiers-cdn/php-emailer" : ">=0.1@stable",
+    "tymfrontiers-cdn/php-http-header" : ">=0.1@stable"
+  },
+  "require-dev": {},
+  "autoload": {
+      "psr-4": {
+          "TymFrontiers\\": "src/"
+      }
+  }
+}
