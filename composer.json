@@ -26,13 +26,13 @@
     "tymfrontiers-cdn/php-mysql-database-object" : ">=0.1@stable",
     "tymfrontiers-cdn/php-pagination" : ">=0.1@stable",
     "tymfrontiers-cdn/php-multiform" : ">=0.1@stable",
-    "tymfrontiers-cdn/php-emailer" : ">=0.1@stable",
+    "tymfrontiers-cdn/php-sos-emailer" : ">=0.1@stable",
     "tymfrontiers-cdn/php-http-header" : ">=0.1@stable"
   },
   "require-dev": {},
   "autoload": {
       "psr-4": {
-          "TymFrontiers\\": "src/"
+          "SOS\\": "src/"
       }
   }
 }
