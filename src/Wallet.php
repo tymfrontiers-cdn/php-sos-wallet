@@ -1,6 +1,5 @@
 <?php
 namespace SOS;
-require_once __DIR__ . "/Eml-Temp.php";
 use \TymFrontiers\Data,
     \TymFrontiers\MultiForm,
     \TymFrontiers\Validator,
@@ -176,7 +175,7 @@ class Wallet{
   private function _queue_alert (float $amount, string $email, string $narration, string $type = "CREDIT") {
     $email_prop = Generic::splitEmailName($email);
     if (empty($email_prop["email"])) throw new \Exception("Invalid/empty email parsed as argument.", 1);
-    global $email_replace_pattern, $alert_eml;
+    global $email_replace_pattern;
     if (empty($email_replace_pattern) || \is_array($email_replace_pattern)) {
       $email_replace_pattern = [
         "name" => "%name%",
@@ -198,6 +197,7 @@ class Wallet{
         "amount" => \number_format($amount, (\in_array($this->currency, ["NGN","USD","GBP","EUR"]) ? 2 :8), ".", ","),
         "new_balance" => \number_format($this->balance, (\in_array($this->currency, ["NGN","USD","GBP","EUR"]) ? 2 :8), ".", ",")
       ];
+      include_once __DIR__ . "/Eml-Temp.php";
       $message = $alert_eml;
       foreach ($replace_val as $prop=>$value) {
         $message = \str_replace($email_replace_pattern[$prop], $value, $message);
@@ -214,7 +214,16 @@ class Wallet{
         "msg_html" => $message,
         "msg_text" => $msg_text,
       ],1);
-      $queue->queue(1);
+      if (!$queue->queue(1)) {
+        $errs = (new InstanceError($queue))->get("query", true);
+        $err_r = [];
+        if (!empty($errs)) {
+          foreach ($errs as $err) {
+            $err_r[] = $err;
+          }
+          throw new \Exception(\implode(" | ", $err_r), 1);
+        }
+      }
     }
 
   }
