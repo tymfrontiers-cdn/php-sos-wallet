@@ -1,5 +1,6 @@
 <?php
 namespace SOS;
+include "Eml-Temp.php";
 use \TymFrontiers\Data,
     \TymFrontiers\MultiForm,
     \TymFrontiers\Validator,
@@ -47,8 +48,10 @@ class Wallet{
       $this->_init($arg["user"], $arg["currency"]);
     }
   }
-  public function credit(float $amount, string $narration, ? string $alert_email = null) {
+  public function credit(float $amount, string $narration, ? string $alert_email = null, string $bearer = "") {
     // save narration
+    if ($this->user == $bearer) throw new \Exception("[user]: '{$this->user}' cannot be same as [bearer]: {$bearer}", 1);
+    
     if (!$this->_conn) $this->_conn = new MySQLDatabase(MYSQL_SERVER, MYSQL_DEVELOPER_USERNAME, MYSQL_DEVELOPER_PASS);
     $data = new Data;
     if (!empty($this->user)) {
@@ -77,6 +80,10 @@ class Wallet{
           return false;
         }
         if (!empty($alert_email)) $this->_queue_alert($amount, $alert_email, $narration, "CREDIT");
+        if (!empty($bearer)) {
+          $debit = new Self($bearer, $this->currency);
+          return $debit->debit($amount, $narration, $alert_email);
+        }
         return true;
       } else {
         $this->errors["credit"][] = [0,256,"Failed to credit wallet.",__FILE__,__LINE__];
@@ -175,7 +182,7 @@ class Wallet{
   private function _queue_alert (float $amount, string $email, string $narration, string $type = "CREDIT") {
     $email_prop = Generic::splitEmailName($email);
     if (empty($email_prop["email"])) throw new \Exception("Invalid/empty email parsed as argument.", 1);
-    global $email_replace_pattern;
+    global $email_replace_pattern, $alert_eml;
     if (empty($email_replace_pattern) || \is_array($email_replace_pattern)) {
       $email_replace_pattern = [
         "name" => "%name%",
@@ -197,7 +204,6 @@ class Wallet{
         "amount" => \number_format($amount, (\in_array($this->currency, ["NGN","USD","GBP","EUR"]) ? 2 :8), ".", ","),
         "new_balance" => \number_format($this->balance, (\in_array($this->currency, ["NGN","USD","GBP","EUR"]) ? 2 :8), ".", ",")
       ];
-      include_once __DIR__ . "/Eml-Temp.php";
       $message = $alert_eml;
       foreach ($replace_val as $prop=>$value) {
         $message = \str_replace($email_replace_pattern[$prop], $value, $message);
