@@ -51,7 +51,7 @@ class Wallet{
   public function credit(float $amount, string $narration, ? string $alert_email = null, string $bearer = "") {
     // save narration
     if ($this->user == $bearer) throw new \Exception("[user]: '{$this->user}' cannot be same as [bearer]: {$bearer}", 1);
-    
+
     if (!$this->_conn) $this->_conn = new MySQLDatabase(MYSQL_SERVER, MYSQL_DEVELOPER_USERNAME, MYSQL_DEVELOPER_PASS);
     $data = new Data;
     if (!empty($this->user)) {
@@ -62,9 +62,10 @@ class Wallet{
       $query .= "AND `currency` = '{$this->_conn->escapeValue($this->currency)}' LIMIT 1";
       if ($this->_conn->query($query)) {
         if (!empty($this->_conn->errors["query"])) unset($this->_conn->errors["query"]);
-        $inset = "INSERT INTO `".self::$_db_name."`.`wallet_history` (`user`, `type`, `amount`, `new_balance`, `narration`) VALUES (
+        $inset = "INSERT INTO `".self::$_db_name."`.`wallet_history` (`user`, `type`, `currency`, `amount`, `new_balance`, `narration`) VALUES (
           '{$this->_conn->escapeValue($this->user)}',
           'CREDIT',
+          '{$this->currency}',
           {$amount},
           {$this->balance},
           '{$this->_conn->escapeValue($narration)}'
@@ -110,9 +111,10 @@ class Wallet{
       $query .= "AND `currency` = '{$this->_conn->escapeValue($this->currency)}' LIMIT 1";
       if ($this->_conn->query($query)) {
         if (!empty($this->_conn->errors["query"])) unset($this->_conn->errors["query"]);
-        $inset = "INSERT INTO `".self::$_db_name."`.`wallet_history` (`user`, `type`, `amount`, `new_balance`, `narration`) VALUES (
+        $inset = "INSERT INTO `".self::$_db_name."`.`wallet_history` (`user`, `type`, `currency`, `amount`, `new_balance`, `narration`) VALUES (
           '{$this->_conn->escapeValue($this->user)}',
           'DEBIT',
+          '{$this->currency}',
           {$amount},
           {$this->balance},
           '{$this->_conn->escapeValue($narration)}'
