@@ -1,6 +1,5 @@
 <?php
 namespace SOS;
-include "Eml-Temp.php";
 use \TymFrontiers\Data,
     \TymFrontiers\MultiForm,
     \TymFrontiers\Validator,
@@ -38,7 +37,7 @@ class Wallet{
   function __construct(string $user, string $currency) {
     $gen = new Generic;
     $arg = $gen->requestParam([
-      "user" => ["user","username",3,32,[],"UPPER",["-",".","_"]],
+      "user" => ["user","username",3,32,[],"UPPER",["/"]],
       "currency" => ["currency","username",3,5]
     ],[
       "user" => $user,
@@ -80,10 +79,11 @@ class Wallet{
           if (!empty($this->_conn->errors["query"])) unset($this->_conn->errors["query"]);
           return false;
         }
+        $this->_logToFile("CREDIT", $amount, $this->balance);
         if (!empty($alert_email)) $this->_queue_alert($amount, $alert_email, $narration, "CREDIT");
         if (!empty($bearer)) {
           $debit = new Self($bearer, $this->currency);
-          return $debit->debit($amount, $narration, $alert_email);
+          return $debit->debit($amount, $narration);
         }
         return true;
       } else {
@@ -129,6 +129,7 @@ class Wallet{
           if (!empty($this->_conn->errors["query"])) unset($this->_conn->errors["query"]);
           return false;
         }
+        $this->_logToFile("DEBIT", $amount, $this->balance);
         if (!empty($alert_email)) $this->_queue_alert($amount, $alert_email, $narration, "DEBIT");
         return true;
       } else {
@@ -166,7 +167,7 @@ class Wallet{
     $data = new Data;
     $gen = new Generic;
     $params = $gen->requestParam([
-      "user" => ["user","username",3,32,[],"UPPER",["-",".","_"]],
+      "user" => ["user","username",3,32,[],"UPPER",["/"]],
       "currency" => ["currency","username", 3, 6]
     ], ["user"=>$user, "currency"=>$currency], ["user","currency"]);
     if (!$params && !empty($gen->errors)) {
@@ -206,9 +207,22 @@ class Wallet{
         "amount" => \number_format($amount, (\in_array($this->currency, ["NGN","USD","GBP","EUR"]) ? 2 :8), ".", ","),
         "new_balance" => \number_format($this->balance, (\in_array($this->currency, ["NGN","USD","GBP","EUR"]) ? 2 :8), ".", ",")
       ];
-      $message = $alert_eml;
+      $message = "<div style=\"padding:12px\">";
+      $message .= "<p>Dear %name%, <br> <br> A [%type%] transaction has occured on your wallet.</p>";
+      $message .= "<h3>Transaction detail</h3>";
+      $message .= "<table>";
+      $message .= "<tr style=\"border-bottom: solid 1px #2196F3;\"> <th style=\"padding:8px; text-align:right\">Currency</th> <td style=\"padding:8px\">%currency%</td> </tr>";
+      $message .= "<tr style=\"border-bottom: solid 1px #2196F3;\"> <th style=\"padding:8px; text-align:right\">Amount</th> <td style=\"padding:8px\">%amount%</td> </tr>";
+      $message .= "<tr style=\"border-bottom: solid 1px #2196F3;\"> <th style=\"padding:8px; text-align:right\">New balance</th> <td style=\"padding:8px\">%new_balance%</td> </tr>";
+      $message .= "<tr style=\"border-bottom: solid 1px #2196F3;\"> <th style=\"padding:8px; text-align:right\">Date</th> <td style=\"padding:8px\">%date%</td> </tr>";
+      $message .= "</table>";
+      $message .= "<p> More info about this transaction is available on your account's wallet history.</p>";
+      $message .= "</div>";
       foreach ($replace_val as $prop=>$value) {
         $message = \str_replace($email_replace_pattern[$prop], $value, $message);
+      }
+      if ( \function_exists("email_temp")) {
+        $message = \email_temp($message);
       }
       $subject = "New [{$type}] transaction on your {$this->currency} Wallet";
       $msg_text = "Debit of {$replace_val["currency"]} {$replace_val["amount"]} occured on your {$this->currency} Wallet";
@@ -233,7 +247,26 @@ class Wallet{
         }
       }
     }
-
+  }
+  protected function _logToFile (string $type, float $amount, float $new_balance) {
+    // log to file
+    // date | id | type | amount | new_balance
+    $trxid = $this->_conn ? $this->_conn->insertId() : NULL;
+    $txt_val = [
+      \strftime("%Y-%m-%d %H:%M:%S", \time()),
+      $trxid,
+      $type,
+      $amount,
+      $new_balance
+    ];
+    $user = \str_replace("/","--",$this->user);
+    $file_dir = PRJ_ROOT . "/.system/logs/sos-wallets";
+    if (!\file_exists($file_dir)) {
+      \mkdir($file_dir, 0777, true);
+    }
+    $txt_val = \implode(" | ", $txt_val);
+    $log_file = "{$file_dir}/{$user}.log";
+    \file_put_contents($log_file, $txt_val . PHP_EOL, FILE_APPEND);
   }
   // check environment
   private static function _checkEnv(){
