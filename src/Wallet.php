@@ -178,7 +178,11 @@ class Wallet{
     $this->currency = $database->escapeValue($params["currency"]);
     $this->balance = $data->encodeEncrypt("0.00");
     if (!$this->_create()) {
-      throw new \Exception("Failed to register Wallet user", 1);
+      $out = "Failed to register Wallet user";
+      if (!empty($this->errors) && $errs = (new InstanceError($this,true))->get("query",true)) {
+        $out .= (": " . \implode(" | ",$errs));
+      }
+      throw new \Exception($out, 1);
     }
     $this->balance = 0.00;
   }
